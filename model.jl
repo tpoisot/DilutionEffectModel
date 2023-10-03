@@ -20,7 +20,7 @@ include(joinpath("lib", "helpers.jl"))
 
 # Generate a dataframe for simulations
 bank = DataFrame()
-centers = collect(0:20:100)
+centers = collect(0:10:100)
 barycenters = [(c1, c2, c3) for c1 in centers for c2 in centers for c3 in centers]
 filter!(b -> isequal(100)(sum(b)), barycenters)
 
@@ -93,8 +93,8 @@ begin
         labelz="Predation"
     )
 
-    divpal = ColorSchemes.diverging_bwg_20_95_c41_n256
-    linpal = ColorSchemes.linear_gow_65_90_c35_n256
+    divpal = ColorSchemes.diverging_bwr_55_98_c37_n256
+    linpal = ColorSchemes.linear_kbgyw_5_98_c62_n256
 
     zval = final.prevalence
     cpal = minimum(zval) < 0.0 ? divpal : linpal
@@ -106,7 +106,7 @@ begin
         mut, cmp, prd,
         color=point_color,
         marker=:circle,
-        markersize=40.0.*sqrt.(final.n/200),
+        markersize=80.0.*sqrt.(final.n/200),
     )
 
     Colorbar(fig[end+1, 1], colormap=cpal, limits=mval, vertical=false)
