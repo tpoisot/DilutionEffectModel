@@ -1,6 +1,5 @@
 S = 25 # Number of species
 timesteps = 500 # Timesteps for the simulation
-A = zeros(Float64, (4, S, S)) # Interactions -- transmission, mutualism, competition, predation
 Co = 0.5 # Connectance of the matrix
 K = 100.0 # Carrying capacity
 σₓ = 0.2 # Dispersal for biotic interactions
