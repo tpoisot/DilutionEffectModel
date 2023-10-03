@@ -22,7 +22,7 @@ end
 range(x...) = x ./ sum(x)
 
 # Centers for the populations
-centers = collect(0:10:100)
+centers = collect(0:5:100)
 barycenters = [(c1, c2, c3) for c1 in centers for c2 in centers for c3 in centers]
 filter!(b -> isequal(100)(sum(b)), barycenters)
 
@@ -46,38 +46,40 @@ Threads.@threads for i in eachindex(barycenters)
     prv = [sum(output[2])/sum(output[3]) for output in outputs]
     cdp = isempty(outputs) ? 0.0 : cor(div, prv)
 
-    diversity[i] = mean(div)
-    richness[i] = mean(ric)
-    prevalences[i] = mean(prv)
+    diversity[i] = isempty(div) ? 0.0 : mean(div)
+    richness[i] = isempty(ric) ? 0.0 : mean(ric)
+    prevalences[i] = isempty(prv) ? 0.0 : mean(prv)
     correlations[i] = isnan(cdp) ? 0.0 : cdp
 
     next!(progressbar)
 end
 
-fig = Figure();
-ax = Axis(fig[1, 1]);
+begin
+    fig = Figure();
+    ax = Axis(fig[1, 1]);
 
-mut = map(x -> x[1]/sum(x), barycenters)
-cmp = map(x -> x[2]/sum(x), barycenters)
-prd = map(x -> x[3]/sum(x), barycenters)
+    mut = map(x -> x[1]/sum(x), barycenters)
+    cmp = map(x -> x[2]/sum(x), barycenters)
+    prd = map(x -> x[3]/sum(x), barycenters)
 
-ternaryaxis!(
-    ax;
-    labelx = "Mutualism",
-    labely = "Competition",
-    labelz = "Predation",
-);
+    ternaryaxis!(
+        ax;
+        labelx = "Mutualism",
+        labely = "Competition",
+        labelz = "Predation",
+    );
 
-tplot = ternarycontourf!(
-    ax,
-    cmp, mut, prd,
-    prevalences,
-    colormap = :dense, levels=10
-)
+    tplot = ternarycontourf!(
+        ax,
+        cmp, mut, prd,
+        richness,
+        colormap = :RdYlGn, levels=10
+    )
 
-Colorbar(fig[1,end+1], tplot)
+    Colorbar(fig[1,end+1], tplot)
 
-xlims!(ax, -0.2, 1.2)
-ylims!(ax, -0.3, 1.1)
-hidedecorations!(ax)
-fig
+    xlims!(ax, -0.2, 1.2)
+    ylims!(ax, -0.3, 1.1)
+    hidedecorations!(ax)
+    fig
+end
