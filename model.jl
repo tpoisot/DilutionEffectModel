@@ -7,6 +7,9 @@ using LinearAlgebra
 import ColorSchemes
 using ProgressMeter
 using Statistics
+using UUIDs
+using DataFrames
+import CSV
 
 # Load some functions
 include(joinpath("lib", "parameters.jl"))
@@ -14,43 +17,47 @@ include(joinpath("lib", "interactions.jl"))
 include(joinpath("lib", "ode.jl"))
 include(joinpath("lib", "onesim.jl"))
 
-function shannon(x)
-    p = x ./ sum(x)
-    return - sum(p .* log.(p))
-end
-
-range(x...) = x ./ sum(x)
-
-# Centers for the populations
-centers = collect(0:5:100)
+# Generate a dataframe for simulations
+simulation_bank = DataFrame()
+centers = collect(0:4:100)
 barycenters = [(c1, c2, c3) for c1 in centers for c2 in centers for c3 in centers]
 filter!(b -> isequal(100)(sum(b)), barycenters)
 
-progressbar = Progress(length(barycenters));
+for b in barycenters
+    push!(simulation_bank, (
+        id = uuid4(),
+        mutualism = b[1],
+        competition = b[2],
+        predation = b[3],
+    ))
+end
 
-diversity = zeros(Float64, length(barycenters))
-prevalences = zeros(Float64, length(barycenters))
-richness = zeros(Float64, length(barycenters))
-correlations = zeros(Float64, length(barycenters))
+progressbar = Progress(size(simulation_bank, 1));
 
-Threads.@threads for i in eachindex(barycenters)
+simulations_results = [DataFrame() for thr in 1:Threads.nthreads()]
+
+Threads.@threads for i in 1:size(simulation_bank, 1)
     
-    intprop = range(barycenters[i]...) # Mutualism, Competition, Predation
+    sim_id = simulation_bank.id[i]
+    intprop = range(simulation_bank.mutualism[i], simulation_bank.competition[i], simulation_bank.predation[i])
     
-    #Sₜ, Iₜ, Hₜ = onesim(S, intprop)
-    outputs = [onesim(S, intprop) for _ in 1:20]
-    filter!(x -> !isempty(x[3]), outputs)
-
-    div = [shannon(output[3]) for output in outputs]
-    ric = [length(output[3]) for output in outputs]
-    prv = [sum(output[2])/sum(output[3]) for output in outputs]
-    cdp = isempty(outputs) ? 0.0 : cor(div, prv)
-
-    diversity[i] = isempty(div) ? 0.0 : mean(div)
-    richness[i] = isempty(ric) ? 0.0 : mean(ric)
-    prevalences[i] = isempty(prv) ? 0.0 : mean(prv)
-    correlations[i] = isnan(cdp) ? 0.0 : cdp
-
+    for replicate in 1:5
+        Sᵢ, Iᵢ, Hᵢ = onesim(S, intprop)
+        if ~isempty(Hᵢ)
+            repl_id = uuid4()
+            push!(simulations_results[Threads.threadid()], (
+                parameters = sim_id,
+                replicate = repl_id,
+                S = sum(Sᵢ),
+                I = sum(Iᵢ),
+                H = sum(Hᵢ),
+                prevalence = sum(Iᵢ)/sum(Hᵢ),
+                diversity = shannon(Hᵢ),
+                richness = length(Hᵢ)
+            ))
+        end
+    end
+    
     next!(progressbar)
 end
 
@@ -69,7 +76,7 @@ begin
         labelz = "Predation",
     );
 
-    tplot = ternarycontourf!(
+    tplot = ternarycontour!(
         ax,
         cmp, mut, prd,
         richness,
