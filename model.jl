@@ -18,13 +18,13 @@ include(joinpath("lib", "ode.jl"))
 include(joinpath("lib", "onesim.jl"))
 
 # Generate a dataframe for simulations
-simulation_bank = DataFrame()
+bank = DataFrame()
 centers = collect(0:4:100)
 barycenters = [(c1, c2, c3) for c1 in centers for c2 in centers for c3 in centers]
 filter!(b -> isequal(100)(sum(b)), barycenters)
 
 for b in barycenters
-    push!(simulation_bank, (
+    push!(bank, (
         id = uuid4(),
         mutualism = b[1],
         competition = b[2],
@@ -32,20 +32,20 @@ for b in barycenters
     ))
 end
 
-progressbar = Progress(size(simulation_bank, 1));
+progressbar = Progress(size(bank, 1));
 
-simulations_results = [DataFrame() for thr in 1:Threads.nthreads()]
+results = [DataFrame() for thr in 1:Threads.nthreads()]
 
-Threads.@threads for i in 1:size(simulation_bank, 1)
+Threads.@threads for parameters in eachrow(bank)
     
-    sim_id = simulation_bank.id[i]
-    intprop = range(simulation_bank.mutualism[i], simulation_bank.competition[i], simulation_bank.predation[i])
+    sim_id = parameters.id
+    intprop = range(parameters.mutualism, parameters.competition, parameters.predation)
     
-    for replicate in 1:5
+    for replicate in 1:200
         Sᵢ, Iᵢ, Hᵢ = onesim(S, intprop)
         if ~isempty(Hᵢ)
             repl_id = uuid4()
-            push!(simulations_results[Threads.threadid()], (
+            push!(results[Threads.threadid()], (
                 parameters = sim_id,
                 replicate = repl_id,
                 S = sum(Sᵢ),
@@ -61,13 +61,33 @@ Threads.@threads for i in 1:size(simulation_bank, 1)
     next!(progressbar)
 end
 
+results = vcat(results...)
+data = dropmissing!(leftjoin(results, bank, on = :parameters => :id))
+
+function safe_cor(x, y)
+    c = cor(x,y)
+    return isnan(c) ? 0.0 : c
+end
+
+final = combine(
+    groupby(data, :parameters),
+    :prevalence => mean => :prevalence,
+    :diversity => mean => :diversity,
+    :richness => median => :richness,
+    [:diversity, :prevalence] => safe_cor => :correlation,
+    :mutualism => first => :mutualism,
+    :competition => first => :competition,
+    :predation => first => :predation,
+    nrow => :n
+)
+
 begin
     fig = Figure();
     ax = Axis(fig[1, 1]);
 
-    mut = map(x -> x[1]/sum(x), barycenters)
-    cmp = map(x -> x[2]/sum(x), barycenters)
-    prd = map(x -> x[3]/sum(x), barycenters)
+    mut = final.mutualism/100
+    cmp = final.competition/100
+    prd = final.predation/100
 
     ternaryaxis!(
         ax;
@@ -76,11 +96,12 @@ begin
         labelz = "Predation",
     );
 
-    tplot = ternarycontour!(
+    tplot = ternarycontourf!(
         ax,
         cmp, mut, prd,
-        richness,
-        colormap = :RdYlGn, levels=10
+        final.correlation,
+        colormap = :Spectral,
+        levels=LinRange(-1, 1, 100),
     )
 
     Colorbar(fig[1,end+1], tplot)
