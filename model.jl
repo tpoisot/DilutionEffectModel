@@ -96,17 +96,17 @@ begin
     divpal = ColorSchemes.diverging_bwg_20_95_c41_n256
     linpal = ColorSchemes.linear_gow_65_90_c35_n256
 
-    zval = final.correlation
+    zval = final.prevalence
     cpal = minimum(zval) < 0.0 ? divpal : linpal
-    mval = minimum(zval) < 0.0 ? (-1., 1.) : extrema(zval)
+    mval = minimum(zval) < 0.0 ? (-0.6, 0.6) : extrema(zval)
     point_color = get(cpal, zval, mval)
 
     tplot = ternaryscatter!(
         ax,
         mut, cmp, prd,
         color=point_color,
-        marker=:hexagon,
-        markersize=35,
+        marker=:circle,
+        markersize=40.0.*sqrt.(final.n/200),
     )
 
     Colorbar(fig[end+1, 1], colormap=cpal, limits=mval, vertical=false)
