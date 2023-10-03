@@ -20,7 +20,7 @@ include(joinpath("lib", "helpers.jl"))
 
 # Generate a dataframe for simulations
 bank = DataFrame()
-centers = collect(0:2:100)
+centers = collect(0:10:100)
 barycenters = [(c1, c2, c3) for c1 in centers for c2 in centers for c3 in centers]
 filter!(b -> isequal(100)(sum(b)), barycenters)
 
@@ -42,7 +42,7 @@ Threads.@threads for parameters in eachrow(bank)
     sim_id = parameters.id
     intprop = [parameters.mutualism, parameters.competition, parameters.predation]
 
-    for replicate in 1:50
+    for replicate in 1:150
         Sᵢ, Iᵢ, Hᵢ = onesim(S, intprop)
         if ~isempty(Hᵢ)
             repl_id = uuid4()
@@ -65,14 +65,10 @@ end
 results = vcat(results...)
 data = dropmissing!(leftjoin(results, bank, on=:parameters => :id))
 
-function safe_cor(x, y)
-    c = cor(x, y)
-    return isnan(c) ? 0.0 : c
-end
-
 final = combine(
     groupby(data, :parameters),
     :prevalence => mean => :prevalence,
+    :prevalence => safe_std => :prevalence_std,
     :diversity => mean => :diversity,
     :richness => median => :richness,
     [:diversity, :prevalence] => safe_cor => :correlation,
@@ -83,7 +79,7 @@ final = combine(
 )
 
 begin
-    fig = Figure()
+    fig = Figure(; resolution=(800, 800))
     ax = Axis(fig[1, 1])
 
     mut = final.mutualism / 100
@@ -97,16 +93,23 @@ begin
         labelz="Predation"
     )
 
+    divpal = ColorSchemes.diverging_bwg_20_95_c41_n256
+    linpal = ColorSchemes.linear_gow_65_90_c35_n256
+
+    zval = final.correlation
+    cpal = minimum(zval) < 0.0 ? divpal : linpal
+    mval = minimum(zval) < 0.0 ? (-1., 1.) : extrema(zval)
+    point_color = get(cpal, zval, mval)
+
     tplot = ternaryscatter!(
         ax,
-        cmp, mut, prd,
-        color=final.prevalence,
-        colormap=:linear_worb_100_25_c53_n256,
+        mut, cmp, prd,
+        color=point_color,
         marker=:hexagon,
-        markersize=20,
+        markersize=35,
     )
 
-    Colorbar(fig[1, end+1], tplot)
+    Colorbar(fig[end+1, 1], colormap=cpal, limits=mval, vertical=false)
 
     xlims!(ax, -0.2, 1.2)
     ylims!(ax, -0.3, 1.1)

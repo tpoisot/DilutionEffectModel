@@ -1,4 +1,3 @@
-
 function densitydependent(du, u, p, t)
     S, r, δ, h, β, M, P, C, ρ, ν = p
 

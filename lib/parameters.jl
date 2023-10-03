@@ -1,4 +1,4 @@
-S = 25 # Number of species
+S = 50 # Number of species
 timesteps = 500 # Timesteps for the simulation
 Co = 0.5 # Connectance of the matrix
 K = 100.0 # Carrying capacity
