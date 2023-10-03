@@ -1,0 +1,8 @@
+[deps]
+CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
+ColorSchemes = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
+DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+TernaryDiagrams = "54198458-1476-45ac-9e44-88a4201bfea6"
