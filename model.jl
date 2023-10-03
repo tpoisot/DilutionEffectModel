@@ -22,9 +22,9 @@ end
 range(x...) = x ./ sum(x)
 
 # Centers for the populations
-centers = collect(10:5:90)
+centers = collect(0:10:100)
 barycenters = [(c1, c2, c3) for c1 in centers for c2 in centers for c3 in centers]
-filter!(b -> isequal(110)(sum(b)), barycenters)
+filter!(b -> isequal(100)(sum(b)), barycenters)
 
 progressbar = Progress(length(barycenters));
 
@@ -38,7 +38,7 @@ Threads.@threads for i in eachindex(barycenters)
     intprop = range(barycenters[i]...) # Mutualism, Competition, Predation
     
     #Sₜ, Iₜ, Hₜ = onesim(S, intprop)
-    outputs = [onesim(S, intprop) for _ in 1:10]
+    outputs = [onesim(S, intprop) for _ in 1:20]
     filter!(x -> !isempty(x[3]), outputs)
 
     div = [shannon(output[3]) for output in outputs]
@@ -57,20 +57,25 @@ end
 fig = Figure();
 ax = Axis(fig[1, 1]);
 
-x1 = map(x -> x[1]/sum(x), barycenters)
-x2 = map(x -> x[2]/sum(x), barycenters)
-x3 = map(x -> x[3]/sum(x), barycenters)
+mut = map(x -> x[1]/sum(x), barycenters)
+cmp = map(x -> x[2]/sum(x), barycenters)
+prd = map(x -> x[3]/sum(x), barycenters)
 
-cs = get(ColorSchemes.lapaz, diversity, extrema(diversity))
+ternaryaxis!(
+    ax;
+    labelx = "Mutualism",
+    labely = "Competition",
+    labelz = "Predation",
+);
 
-ternaryaxis!(ax);
-ternaryscatter!(
+tplot = ternarycontourf!(
     ax,
-    x1, x2, x3,
-    color = cs,
-    marker = :circle,
-    markersize = 20,
+    cmp, mut, prd,
+    prevalences,
+    colormap = :dense, levels=10
 )
+
+Colorbar(fig[1,end+1], tplot)
 
 xlims!(ax, -0.2, 1.2)
 ylims!(ax, -0.3, 1.1)
