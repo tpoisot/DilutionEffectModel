@@ -12,6 +12,18 @@ include(joinpath("lib", "parameters.jl"))
 include(joinpath("lib", "interactions.jl"))
 include(joinpath("lib", "ode.jl"))
 
+function onepopislow(u, t, integrator)
+    return length(u) - count(u .< 10eps())
+end
+function extinguishpop!(integrator)
+    for i in eachindex(integrator.u)
+        if integrator.u[i] < 10eps()
+            integrator.u[i] = 0.0
+        end
+    end
+end
+cb = ContinuousCallback(onepopislow, extinguishpop!)
+
 function shannon(x)
     p = x ./ sum(x)
     return - sum(p .* log.(p))
@@ -28,6 +40,7 @@ progressbar = Progress(length(barycenters));
 
 diversity = zeros(Float64, length(barycenters))
 prevalences = zeros(Float64, length(barycenters))
+richness = zeros(Float64, length(barycenters))
 
 Threads.@threads for i in eachindex(barycenters)
     
@@ -45,14 +58,20 @@ Threads.@threads for i in eachindex(barycenters)
     p = (S, r, δ, h, β, M, P, C, ρ, ν)
 
     prob = ODEProblem(densitydependent, u₀, (0.0, timesteps), p)
-    sol = solve(prob);
+    sol = solve(prob, callback=cb)
 
     SI = sol[end]
     Sₜ = SI[1:S]
     Iₜ = SI[(S+1):end]
     Hₜ = Sₜ .+ Iₜ
+    
+    remain = findall((Sₜ .> 10eps()).*(Iₜ .> 10eps()))
+    Sₜ = Sₜ[remain]
+    Iₜ = Iₜ[remain]
+    Hₜ = Sₜ .+ Iₜ
 
     diversity[i] = shannon(Hₜ)
+    richness[i] = length(remain)
     prevalences[i] = sum(Iₜ) / sum(Hₜ)
 
     next!(progressbar)
@@ -65,7 +84,7 @@ x1 = map(x -> x[1]/sum(x), barycenters)
 x2 = map(x -> x[2]/sum(x), barycenters)
 x3 = map(x -> x[3]/sum(x), barycenters)
 
-cs = [get(ColorSchemes.lapaz, w, extrema(prevalences)) for w in prevalences]
+cs = [get(ColorSchemes.lapaz, w, extrema(richness)) for w in richness]
 
 ternaryaxis!(ax);
 ternaryscatter!(
