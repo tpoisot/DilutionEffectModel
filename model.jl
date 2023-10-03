@@ -20,7 +20,7 @@ include(joinpath("lib", "helpers.jl"))
 
 # Generate a dataframe for simulations
 bank = DataFrame()
-centers = collect(0:10:100)
+centers = collect(0:20:100)
 barycenters = [(c1, c2, c3) for c1 in centers for c2 in centers for c3 in centers]
 filter!(b -> isequal(100)(sum(b)), barycenters)
 
@@ -42,7 +42,7 @@ Threads.@threads for parameters in eachrow(bank)
     sim_id = parameters.id
     intprop = [parameters.mutualism, parameters.competition, parameters.predation]
 
-    for replicate in 1:150
+    for replicate in 1:20
         Sᵢ, Iᵢ, Hᵢ = onesim(S, intprop)
         if ~isempty(Hᵢ)
             repl_id = uuid4()
