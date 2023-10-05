@@ -52,7 +52,7 @@ CSV.write(joinpath(input_path, "sets.csv"), bank)
 job_file = """
 #! /bin/bash
 #SBATCH --array=1-$(size(bank, 1))
-#SBATCH --time=02:00:00
+#SBATCH --time=01:00:00
 #SBATCH --mem-per-cpu=2500M
 #SBATCH --cpus-per-task=64
 #SBATCH --job-name=disease-dilution-effect
