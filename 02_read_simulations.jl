@@ -14,7 +14,7 @@ filter!(!contains("gitkeep"), outputs)
 all_simulations = vcat(readdir.(outputs; join=true)...)
 results = [DataFrame() for thr in 1:Threads.nthreads()]
 
-for simulation in all_simulations
+Threads.@threads for simulation in all_simulations
     simid, repid = splitpath(simulation)[(end-1):end]
     timeseries = readdlm(joinpath(simulation, "timeseries.dat"))
     competition = readdlm(joinpath(simulation, "competition.dat"))
