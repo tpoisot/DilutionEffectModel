@@ -32,6 +32,10 @@ parameter_sets = DataFrame(CSV.File(joinpath(input_path, "sets.csv")))
 
 # If the job is not running from SLURM using the full parameter set, this will sample one parameter at random
 parameter_set_id = get(ENV, "SLURM_ARRAY_TASK_ID", rand(1:size(parameter_sets, 1)))
+if !(typeof(parameter_set_id) <: Number)
+    # The environmental variables are strings, so we need to convert
+    parameter_set_id = parse(Int, parameter_set_id)
+end
 parameters = parameter_sets[parameter_set_id, :]
 
 # Seed the RNG for the node
