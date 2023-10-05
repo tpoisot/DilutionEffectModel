@@ -3,3 +3,4 @@ Manifest.toml
 outputs/*
 !outputs/.gitkeep
 inputs/sets.csv
+results/*

@@ -17,7 +17,7 @@ if ~ispath("slurm")
 end
 
 bank = DataFrame()
-centers = collect(0:5:100)
+centers = collect(0:2:100)
 barycenters = [(c1, c2, c3) for c1 in centers for c2 in centers for c3 in centers]
 filter!(b -> isequal(100)(sum(b)), barycenters)
 
@@ -32,8 +32,8 @@ for b in barycenters
             predation=b[3],
             density=density,
             replicates=1000,
-            richness=20,
-            time=500,
+            richness=50,
+            time=1000,
             connectance=0.5,
             carrying_capacity=100.0,
             sigma_interaction=0.2,
