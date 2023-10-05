@@ -37,9 +37,6 @@ parameters = parameter_sets[parameter_set_id, :]
 # Seed the RNG for the node
 Random.seed!(parameters.seed)
 
-# Prepare temporary data frames for each thread
-results = [DataFrame() for thr in 1:Threads.nthreads()]
-
 # Package the parameters for the run
 model_parameters = (
     timesteps=parameters.time,
@@ -60,13 +57,20 @@ interaction_parameters = (
     parameters.mutualism, parameters.competition, parameters.predation
 )
 
+# Main loop using multi-threading
 Threads.@threads for replicate in 1:parameters.replicates
+
+    # Each replicate has a unique id
     this_replicate_id = uuid4()
+
+    # The simulation will return a time series, and a series of matrices
     output = onesim(parameters.richness, interaction_parameters, model_parameters)
     output_replicate_path = joinpath(output_path, parameters.parameters, string(this_replicate_id))
     if ~ispath(output_replicate_path)
         mkpath(output_replicate_path)
     end
+
+    # We ONLY store the raw output at this point, the processing of data is done in another job
     writedlm(joinpath(output_replicate_path, "timeseries.dat"), output[1])
     writedlm(joinpath(output_replicate_path, "mutualism.dat"), output[2])
     writedlm(joinpath(output_replicate_path, "competition.dat"), output[3])
