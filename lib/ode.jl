@@ -1,21 +1,28 @@
-function densitydependent(du, u, p, t)
-    S, r, δ, h, β, M, P, C, ρ, ν = p
+function RwMASIR(du, u, p, t)
+    
+    S = length(p.r)
 
+    # Populations at this time step
     s₀ = u[1:S]
     i₀ = u[(S+1):end]
+    # We get the total population here too
     H₀ = s₀ .+ i₀
 
-    mutualists = .!iszero.(M)
-    predators = P .>= 0.0
+    # This is used to speed-up the lookup of interactions
+    mutualists = .!iszero.(p.M)
+    predators = p.P .>= 0.0
     preys = transpose(predators)
 
     # Terms for each interaction type
-    predation = (P .* predators) * (H₀ ./ (h .+ H₀))
-    prey = (P .* preys) * H₀
-    mutualism = (M .* mutualists) * (H₀ ./ (h .+ H₀))
-    competition = C * H₀
+    predation = (p.P .* predators) * (H₀ ./ (p.h .+ H₀))
+    prey = (p.P .* preys) * H₀
+    mutualism = (p.M .* mutualists) * (H₀ ./ (p.h .+ H₀))
+    competition = p.C * H₀
+
+    # Transmission term
+    ℬ = p.density ? (p.β * i₀) : (p.β * (i₀./sum(H₀)))
 
     # ODE model
-    du[1:S] .= s₀ .* (r - δ .* H₀ + competition + mutualism + predation) + (s₀ ./ (h .+ H₀)) .* prey - s₀ .* (β * i₀) + ρ .* i₀
-    du[(S+1):end] .= i₀ .* (r - δ .* H₀ + competition + mutualism + predation) + (i₀ ./ (h .+ H₀)) .* prey + s₀ .* (β * i₀) - (ρ + ν) .* i₀
+    du[1:S] .= s₀ .* (p.r - p.δ .* H₀ + competition + mutualism + predation) + (s₀ ./ (p.h .+ H₀)) .* prey - s₀ .* ℬ + p.ρ .* i₀
+    du[(S+1):end] .= i₀ .* (p.r - p.δ .* H₀ + competition + mutualism + predation) + (i₀ ./ (p.h .+ H₀)) .* prey + s₀ .* ℬ - (p.ρ + p.ν) .* i₀
 end

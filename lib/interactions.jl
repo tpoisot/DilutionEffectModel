@@ -1,18 +1,18 @@
 inversetransformsampling(𝒟) = quantile(𝒟, rand())
 
-function transmissionmatrix(A, δ)
+function transmissionmatrix(A, mp)
     β = abs.(dropdims(sum(A[2:end, :, :], dims=1), dims=1))
-    β[diagind(β)] .= δ
+    β[diagind(β)] .= mp.δ
     β .*= A[1, :, :]
 end
 
-function interactions!(A::Array{Float64,3}, Co, K, σₓ, σᵢ, p)
+function interactions!(A::Array{Float64,3}, mp, ip)
 
     S = size(A, 2)
 
-    𝒟₁ = Truncated(Normal(0.0, σₓ), 0.0, Inf) # Mutualism and predation
-    𝒟₂ = Truncated(Normal(0.0, σₓ / K), 0.0, Inf) # Competition
-    𝒟₃ = Truncated(Normal(0.0, σᵢ), 0.0, Inf) # Infection
+    𝒟₁ = Truncated(Normal(0.0, mp.σₓ), 0.0, Inf) # Mutualism and predation
+    𝒟₂ = Truncated(Normal(0.0, mp.σₓ / mp.K), 0.0, Inf) # Competition
+    𝒟₃ = Truncated(Normal(0.0, mp.σᵢ), 0.0, Inf) # Infection
 
     interaction_types = [:mutualism, :competition, :predation]
 
@@ -24,8 +24,8 @@ function interactions!(A::Array{Float64,3}, Co, K, σₓ, σᵢ, p)
 
     for i in 1:(S-1)
         for j in (i+1):S
-            if rand() <= Co
-                interaction = sample(interaction_types, Weights([p...]))
+            if rand() <= mp.Co
+                interaction = sample(interaction_types, Weights([ip...]))
                 if interaction == :mutualism
                     A[2, i, j] = inversetransformsampling(𝒟₁)
                     A[2, j, i] = inversetransformsampling(𝒟₁)
