@@ -22,9 +22,9 @@ Threads.@threads for simulation in all_simulations
     mutualism = readdlm(joinpath(simulation, "mutualism.dat"))
     predation = readdlm(joinpath(simulation, "predation.dat"))
 
-    endpoint = timeseries[2:end,end]
-    
-    sp = round(Int, length(endpoint)/2)
+    endpoint = timeseries[2:end, end]
+
+    sp = round(Int, length(endpoint) / 2)
 
     Sₜ = endpoint[1:sp]
     Iₜ = endpoint[(sp+1):end]
@@ -35,22 +35,24 @@ Threads.@threads for simulation in all_simulations
     Sₜ = Sₜ[keep]
     Iₜ = Iₜ[keep]
     Hₜ = Hₜ[keep]
-    pₜ = Hₜ./sum(Hₜ)
+    pₜ = Hₜ ./ sum(Hₜ)
 
-    prevalence = Iₜ./Hₜ
-    degree = vec(sum(infection[keep,keep].>0.0, dims=1))
+    prevalence = Iₜ ./ Hₜ
+    degree = vec(sum(infection[keep, keep] .> 0.0, dims=1))
 
     push!(results[Threads.threadid()], (
-        parameters = simid,
-        replicate = repid,
-        richness = length(Hₜ),
-        susceptibles = sum(Sₜ),
-        infectious = sum(Iₜ),
-        population = sum(Hₜ),
-        correlation = sum(Iₜ) == 0 ? 0.0 : cor(degree, prevalence),
-        prevalence = sum(Iₜ)/sum(Hₜ),
-        diversity = sum(-pₜ.*log.(pₜ))
+        parameters=simid,
+        replicate=repid,
+        richness=length(Hₜ),
+        susceptibles=sum(Sₜ),
+        infectious=sum(Iₜ),
+        population=sum(Hₜ),
+        correlation=sum(Iₜ) == 0 ? 0.0 : cor(degree, prevalence),
+        prevalence=sum(Iₜ) / sum(Hₜ),
+        diversity=sum(-pₜ .* log.(pₜ))
     ))
+
+    CSV.write(joinpath(result_path, "outputs-$(Threads.threadid()).csv"), results[Threads.threadid()])
 
 end
 
