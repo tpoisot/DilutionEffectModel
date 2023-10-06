@@ -17,7 +17,7 @@ if ~ispath("slurm")
 end
 
 bank = DataFrame()
-centers = collect(0:2:100)
+centers = collect(0:5:100)
 barycenters = [(c1, c2, c3) for c1 in centers for c2 in centers for c3 in centers]
 filter!(b -> isequal(100)(sum(b)), barycenters)
 
