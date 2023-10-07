@@ -132,10 +132,13 @@ Threads.@threads for simulation in simulations
             prevalence=sum(Iₜ) / sum(Hₜ),
             diversity=sum(-pₜ .* log.(pₜ))
         ))
+
+        rm(simulation; recursive=true)
     catch err
         @info err
         continue
     end
 end
 
+rm(joinpath(output_path, parameters.parameters); recursive=true)
 CSV.write(joinpath(result_path, "$(parameters.parameters).csv"), vcat(results...))

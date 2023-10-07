@@ -34,7 +34,7 @@ for b in barycenters
             competition=b[2],
             predation=b[3],
             density=density,
-            replicates=10,
+            replicates=1000,
             richness=50,
             time=1000,
             connectance=0.5,
