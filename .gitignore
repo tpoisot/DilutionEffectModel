@@ -1,7 +1,6 @@
 Manifest.toml
 .vscode/*
 outputs/*
-!outputs/.gitkeep
 inputs/sets.csv
 results/*
 slurm/*
