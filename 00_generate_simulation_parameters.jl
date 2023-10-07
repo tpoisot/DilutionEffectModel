@@ -34,7 +34,7 @@ for b in barycenters
             competition=b[2],
             predation=b[3],
             density=density,
-            replicates=1000,
+            replicates=10,
             richness=50,
             time=1000,
             connectance=0.5,
@@ -58,25 +58,10 @@ job_file = """
 #SBATCH --time=02:00:00
 #SBATCH --mem-per-cpu=2500M
 #SBATCH --cpus-per-task=64
-#SBATCH --job-name=disease-dilution-effect
+#SBATCH --job-name=comm-epi-mod
 #SBATCH --output=$(joinpath("slurm", "%x-%a.out"))
 
 module load StdEnv/2020 julia/1.9.1
 julia --project -t 64 01_run_one_parameter.jl
 """
 write("dilution.sh", job_file)
-
-
-# Write the SLURM file to go with the data processing
-prep_job_file = """
-#! /bin/bash
-#SBATCH --time=05:00:00
-#SBATCH --mem-per-cpu=2500M
-#SBATCH --cpus-per-task=64
-#SBATCH --job-name=disease-dilution-dataprep
-#SBATCH --output=$(joinpath("slurm", "%x-%a.out"))
-
-module load StdEnv/2020 julia/1.9.1
-julia --project -t 64 02_read_simulations.jl
-"""
-write("concentration.sh", prep_job_file)
