@@ -2,6 +2,9 @@ using UUIDs
 using DataFrames
 import CSV
 
+import Random
+rng = Random.seed!(314)
+
 input_path = joinpath(dirname(Base.active_project()), "inputs")
 if ~ispath(input_path)
     mkpath(input_path)
@@ -25,7 +28,7 @@ for b in barycenters
     for density in [true, false]
         sigma_infection = density ? 0.001 : 0.01
         push!(bank, (
-            parameters=uuid4(),
+            parameters=uuid4(rng),
             seed=rand(1:200_000),
             mutualism=b[1],
             competition=b[2],

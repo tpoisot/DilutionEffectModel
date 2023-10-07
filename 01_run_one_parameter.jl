@@ -39,7 +39,7 @@ end
 parameters = parameter_sets[parameter_set_id, :]
 
 # Seed the RNG for the node
-Random.seed!(parameters.seed)
+rng = Random.seed!(parameters.seed)
 
 # Package the parameters for the run
 model_parameters = (
@@ -61,11 +61,14 @@ interaction_parameters = (
     parameters.mutualism, parameters.competition, parameters.predation
 )
 
+# Generate the UUID4s for the replicates
+replicates_id = [uuid4(rng) for i in 1:parameters.replicates]
+
 # Main loop using multi-threading
 Threads.@threads for replicate in 1:parameters.replicates
 
     # Each replicate has a unique id
-    this_replicate_id = uuid4()
+    this_replicate_id = replicates_id[replicate]
 
     # The simulation will return a time series, and a series of matrices
     output = onesim(parameters.richness, interaction_parameters, model_parameters)
